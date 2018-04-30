@@ -85,9 +85,9 @@
            05 ProfChoice               PIC X(25).
            05 ModStudentChoice         PIC 9.
            05 ModCourseChoice          PIC 9.
-           05 StudentCorrectChoice     PIC 9.
-           05 CourseCorrectChoice      PIC 9.
-           05 RegCorrectChoice         PIC 9.
+           05 StudentNumberChoice      PIC 9(5).
+           05 CourseNumberChoice       PIC X(6).
+           05 BinaryConfirmChoice      PIC 9.
        
        01 student-tables.
            05 StudentNumber            PIC 99999 OCCURS 100 TIMES.
@@ -142,6 +142,11 @@
            05 CourseCount              PIC 999 VALUE 0.
            05 RegCount                 PIC 999 VALUE 0.
            05 I                        PIC 999 VALUE 0.
+           05 J                        PIC 999 VALUE 0.
+           05 Loc                      PIC 999 VALUE 0.  
+           05 TmpCount                 PIC 999 VALUE 0.
+           05 FoundStudent             PIC 9 VALUE 0.                   .
+           05 FoundCourse              PIC 9 VALUE 0.
    
        01 student-record-heading.
            05 FILLER                   PIC X(2) VALUE "ID".
@@ -439,9 +444,9 @@
            DISPLAY "    Please make your selection: "
                WITH NO ADVANCING.
                
-           ACCEPT StudentCorrectChoice.
+           ACCEPT BinaryConfirmChoice.
            
-           IF StudentCorrectChoice IS EQUAL 1
+           IF BinaryConfirmChoice IS EQUAL 1
                PERFORM Save_new_student
            ELSE 
                PERFORM Add_student
@@ -453,18 +458,85 @@
       * 
        Save_new_student.
            
+           ADD StudentCount 1 GIVING StudentCount.
+           
+           MOVE NewStudentNumber    TO StudentNumber(StudentCount).     
+           MOVE NewStudentLastName  TO StudentLastName(StudentCount).   
+           MOVE NewStudentFirstName TO StudentFirstName(StudentCount).  
+           MOVE NewStudentMajor     TO StudentMajor(StudentCount).
+           MOVE NewStudentGPA       TO StudentGPA(StudentCount).
+           
            DISPLAY " ".
-           DISPLAY "TODO IMPLEMENT Save_new_student".
+           DISPLAY "Student added.".
        
        
       ****************************************
-      * Delete student data from table in memory
+      * Find student number to delete in memory table
       * 
        Del_student.
        
            DISPLAY " ".
-           DISPLAY "TODO IMPLEMENT Del_student".
+           DISPLAY "    Delete Student".
+           DISPLAY "    -----------".
        
+           DISPLAY "    Enter student number to delete: "
+               WITH NO ADVANCING.
+           
+           ACCEPT StudentNumberChoice.
+
+           MOVE 0 TO Loc.
+
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               IF StudentNumber(I) IS EQUAL StudentNumberChoice
+                   MOVE I TO Loc
+               END-IF
+           END-PERFORM.
+               
+           IF Loc > 0
+               PERFORM Delete_student_at_loc    
+           ELSE
+               DISPLAY " "
+               DISPLAY "Student not found."
+           END-IF.
+      
+      
+      *****************************************
+      * Delete student from table in memory
+      *
+       Delete_student_at_loc.
+
+           DISPLAY "    Delete Student ", 
+               StudentNumber(Loc), ": ", 
+               StudentLastName(Loc), " ",
+               StudentFirstName(Loc)
+           DISPLAY "    -----------"
+           DISPLAY "1.  Yes"
+           DISPLAY "2.  No"
+           DISPLAY " "
+           DISPLAY "    Please make your selection: "
+               WITH NO ADVANCING
+               
+           ACCEPT BinaryConfirmChoice.
+               
+           IF BinaryConfirmChoice IS EQUAL 1
+               SUBTRACT 1 FROM StudentCount GIVING TmpCount
+               
+               PERFORM VARYING I FROM Loc BY 1 UNTIL I > TmpCount
+                   ADD 1 I GIVING J
+                   
+                   MOVE StudentNumber(J)    TO StudentNumber(I)
+                   MOVE StudentLastName(J)  TO StudentLastName(I)      
+                   MOVE StudentFirstName(J) TO StudentFirstName(I)     
+                   MOVE StudentMajor(J)     TO StudentMajor(I)
+                   MOVE StudentGPA(J)       TO StudentGPA(I)
+               END-PERFORM
+               
+               SUBTRACT 1 FROM StudentCount
+               
+               DISPLAY " "
+               DISPLAY "Student deleted."
+           END-IF.
+           
 
       ****************************************
       * Display modify course menu
@@ -531,32 +603,98 @@
            DISPLAY "    Please make your selection: "
                WITH NO ADVANCING.
                
-           ACCEPT CourseCorrectChoice.
+           ACCEPT BinaryConfirmChoice.
            
-           IF CourseCorrectChoice IS EQUAL 1
+           IF BinaryConfirmChoice IS EQUAL 1
                PERFORM Save_new_course
            ELSE 
                PERFORM Add_course
            END-IF.
-       
-       
-      *****************************************
-      * Save course data in table memory
-      *
+      
+      
+      ****************************************
+      * Save course data to table in memory
+      * 
        Save_new_course.
            
+           ADD CourseCount 1 GIVING CourseCount.
+
+           MOVE NewCourseNumber TO CourseNumber(CourseCount).
+           MOVE NewCourseName TO CourseName(CourseCount).
+           MOVE NewCourseDays TO CourseDays(CourseCount).
+           MOVE NewCourseTime TO CourseTime(CourseCount).
+           MOVE NewProfLastName TO ProfLastName(CourseCount).
+           
            DISPLAY " ".
-           DISPLAY "TODO IMPLEMENT Save_new_course".
+           DISPLAY "Course added.".
        
        
-      *****************************************
-      * Delete course data from table memory
-      *
+      ****************************************
+      * Find course number to delete in memory table
+      * 
        Del_course.
        
            DISPLAY " ".
-           DISPLAY "TODO IMPLEMENT Del_course".
+           DISPLAY "    Delete Course".
+           DISPLAY "    -----------".
+       
+           DISPLAY "    Enter course number to delete: "
+               WITH NO ADVANCING.
            
+           ACCEPT CourseNumberChoice.
+
+           MOVE 0 TO Loc.
+
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+               IF CourseNumber(I) IS EQUAL CourseNumberChoice
+                   MOVE I TO Loc
+               END-IF
+           END-PERFORM.
+               
+           IF Loc > 0
+               PERFORM Delete_course_at_loc    
+           ELSE
+               DISPLAY " "
+               DISPLAY "Course not found."
+           END-IF.
+      
+      
+      *****************************************
+      * Delete course from table in memory
+      *
+       Delete_course_at_loc.
+
+           DISPLAY "    Delete Course ", 
+               CourseNumber(Loc), ": ", 
+               CourseName(Loc)
+           DISPLAY "    -----------"
+           DISPLAY "1.  Yes"
+           DISPLAY "2.  No"
+           DISPLAY " "
+           DISPLAY "    Please make your selection: "
+               WITH NO ADVANCING
+               
+           ACCEPT BinaryConfirmChoice.
+               
+           IF BinaryConfirmChoice IS EQUAL 1
+               SUBTRACT 1 FROM CourseCount GIVING TmpCount
+               
+               PERFORM VARYING I FROM Loc BY 1 UNTIL I > TmpCount
+                   ADD 1 I GIVING J
+                   
+                   MOVE CourseNumber(J) TO CourseNumber(I)
+                   MOVE CourseName(J) TO CourseName(I)
+                   MOVE CourseDays(J) TO CourseDays(I)
+                   MOVE CourseTime(J) TO CourseTime(I)
+                   MOVE ProfLastName(J) TO ProfLastName(I)
+               END-PERFORM
+               
+               SUBTRACT 1 FROM CourseCount
+               
+               DISPLAY " "
+               DISPLAY "Course deleted."
+           END-IF.
+
 
       *****************************************
       * Display add registration menu 
@@ -583,9 +721,9 @@
            DISPLAY "    Please make your selection: "
                WITH NO ADVANCING.
                
-           ACCEPT RegCorrectChoice.
+           ACCEPT BinaryConfirmChoice.
            
-           IF RegCorrectChoice IS EQUAL 1
+           IF BinaryConfirmChoice IS EQUAL 1
                PERFORM Save_new_register
            ELSE 
                PERFORM Modify_register
@@ -597,8 +735,42 @@
       *
        Save_new_register.
            
+           MOVE 0 TO FoundStudent.
+           MOVE 0 TO FoundCourse.
+           
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               IF StudentNumber(I) IS EQUAL NewRegStuNum
+                   MOVE 1 TO FoundStudent
+               END-IF
+           END-PERFORM.
+           
+           IF FoundStudent < 1
+               DISPLAY " "
+               DISPLAY "Invalid student number. Please try again."
+               PERFORM Modify_register
+               EXIT PARAGRAPH
+           END-IF.
+           
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+               IF CourseNumber(I) IS EQUAL NewRegCourNum
+                   MOVE 1 TO FoundCourse
+               END-IF
+           END-PERFORM.
+           
+           IF FoundCourse < 1
+               DISPLAY " "
+               DISPLAY "Invalid course number. Please try again."
+               PERFORM Modify_register
+               EXIT PARAGRAPH
+           END-IF.
+           
+           ADD RegCount 1 GIVING RegCount.
+       
+           MOVE NewRegStuNum  TO RegStuNum(RegCount).
+           MOVE NewRegCourNum TO RegCourNum(RegCount).
+
            DISPLAY " ".
-           DISPLAY "TODO IMPLEMENT Save_new_register".
+           DISPLAY "Registration info added.".
 
 
       *****************************************
@@ -670,9 +842,9 @@
            DISPLAY student-record-heading.
            WRITE report-record FROM student-record-heading.
            
-           PERFORM Display_student_table_line
-               VARYING I FROM 1 BY 1
-               UNTIL I > StudentCount.
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               PERFORM Display_student_table_line
+           END-PERFORM.
           
           
       *****************************************
@@ -704,9 +876,9 @@
            DISPLAY course-record-heading.
            WRITE report-record FROM course-record-heading.
            
-           PERFORM Display_course_table_line
-               VARYING I FROM 1 BY 1
-               UNTIL I > CourseCount.
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+               PERFORM Display_course_table_line
+           END-PERFORM.
        
        
       *****************************************
@@ -738,9 +910,9 @@
            DISPLAY registration-record-heading.
            WRITE report-record FROM registration-record-heading.
            
-           PERFORM Display_register_table_line
-               VARYING I FROM 1 BY 1
-               UNTIL I > RegCount.
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > RegCount 
+               PERFORM Display_register_table_line
+           END-PERFORM.
        
        
       *****************************************
@@ -777,27 +949,11 @@
            DISPLAY student-record-heading.
            WRITE report-record FROM student-record-heading.
            
-           PERFORM Search_for_major
-               VARYING I FROM 1 BY 1
-               UNTIL I > StudentCount.
-      
-      
-      *****************************************
-      * Display a major if it matches selected major
-      * Write to report file
-      *
-       Search_for_major.
-           
-           IF StudentMajor(I) IS EQUAL MajorChoice
-               MOVE StudentNumber(I)    TO StudentNumberDisp
-               MOVE StudentLastName(I)  TO StudentLastNameDisp
-               MOVE StudentFirstName(I) TO StudentFirstNameDisp
-               MOVE StudentMajor(I)     TO StudentMajorDisp
-               MOVE StudentGPA(I)       TO StudentGPADisp
-               
-               DISPLAY student-record-disp
-               WRITE report-record FROM student-record-disp
-           END-IF.
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               IF StudentMajor(I) IS EQUAL MajorChoice
+                   PERFORM Display_student_table_line
+               END-IF
+           END-PERFORM.
       
       
       *****************************************
@@ -821,34 +977,30 @@
            DISPLAY course-record-heading.
            WRITE report-record FROM course-record-heading.
            
-           PERFORM Search_for_professor
-               VARYING I FROM 1 BY 1
-               UNTIL I > CourseCount.
-      
-      *****************************************
-      * Display a course if it matches selected professor
-      * Write to report file
-      *
-       Search_for_professor.
-       
-           IF ProfLastName(I) IS EQUAL ProfChoice
-               MOVE CourseNumber(I) TO CourseNumberDisp
-               MOVE CourseName(I)   TO CourseNameDisp
-               MOVE CourseDays(I)   TO CourseDaysDisp
-               MOVE CourseTime(I)   TO CourseTimeDisp
-               MOVE ProfLastName(I) TO ProfLastNameDisp
-               
-               DISPLAY course-record-disp
-               WRITE report-record FROM course-record-disp
-           END-IF.
-      
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+               IF ProfLastName(I) IS EQUAL ProfChoice
+                   PERFORM Display_course_table_line
+               END-IF
+           END-PERFORM.
+           
       
       *****************************************
       * Display list of honors students (GPA > 3.5)
       *     
        Honor_students.
        
-           DISPLAY "TODO IMPLEMENT Honor_students".
+           MOVE "Honors Students" TO ReportSectionTitle.
+           DISPLAY report-header.
+           WRITE report-record FROM report-header.
+
+           DISPLAY student-record-heading.
+           WRITE report-record FROM student-record-heading.
+           
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               IF StudentGPA(I) > 3.5
+                   PERFORM Display_student_table_line
+               END-IF
+           END-PERFORM.
       
       
       *****************************************
