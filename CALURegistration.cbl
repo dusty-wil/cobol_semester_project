@@ -88,6 +88,7 @@
            05 StudentNumberChoice      PIC 9(5).
            05 CourseNumberChoice       PIC X(6).
            05 BinaryConfirmChoice      PIC 9.
+           05 AttributeChoice          PIC 9.
        
        01 student-tables.
            05 StudentNumber            PIC 99999 OCCURS 100 TIMES.
@@ -137,17 +138,22 @@
            05 FILLER                   PIC X VALUE SPACES.
            05 NewRegCourNum            PIC X(6).
        
-       01 iterators.
+       01 iterators-and-controls.
            05 StudentCount             PIC 999 VALUE 0.
            05 CourseCount              PIC 999 VALUE 0.
            05 RegCount                 PIC 999 VALUE 0.
            05 I                        PIC 999 VALUE 0.
            05 J                        PIC 999 VALUE 0.
+           05 K                        PIC 999 VALUE 0.
            05 Loc                      PIC 999 VALUE 0.  
            05 TmpCount                 PIC 999 VALUE 0.
            05 FoundStudent             PIC 9 VALUE 0.                   .
            05 FoundCourse              PIC 9 VALUE 0.
-   
+           05 TotalGPA                 PIC 999v999 VALUE 0.
+           05 TotalInMajor             PIC 999 VALUE 0.
+           05 AvgGPA                   PIC 9v99 VALUE 0.
+
+
        01 student-record-heading.
            05 FILLER                   PIC X(2) VALUE "ID".
            05 FILLER                   PIC X(4) VALUE SPACES.
@@ -214,6 +220,10 @@
            05 FILLER                   PIC X VALUE SPACES.
            05 ReportSearchTerm         PIC X(50).
 
+       01 report-avg-disp.
+           05 FILLER                   PIC X(9) VALUE "Avg GPA: ".
+           05 AvgGPADisp               PIC 9.99.
+
       *=================================================================
        
        PROCEDURE DIVISION.
@@ -227,7 +237,7 @@
            
            PERFORM Menu UNTIL MenuChoice IS EQUAL 5.
 
-           CLOSE report-file.
+           
            STOP RUN.
       
       
@@ -388,8 +398,9 @@
            DISPLAY "    Modify Student".
            DISPLAY "    --------------".
            DISPLAY "1.  Add Student".
-           DISPLAY "2.  Delete Student".
-           DISPLAY "3.  Cancel".
+           DISPLAY "2.  Edit Student".
+           DISPLAY "3.  Delete Student".
+           DISPLAY "4.  Cancel".
            DISPLAY " ".
            DISPLAY "    Please make your selection: "
                WITH NO ADVANCING.
@@ -406,6 +417,8 @@
            IF ModStudentChoice IS EQUAL 1
                PERFORM Add_student
            ELSE IF ModStudentChoice IS EQUAL 2
+               PERFORM Edit_student
+           ELSE IF ModStudentChoice IS EQUAL 3
                PERFORM Del_student
            END-IF.
            
@@ -537,6 +550,85 @@
                DISPLAY "Student deleted."
            END-IF.
            
+           
+      *****************************************
+      * Find student to edit
+      * 
+       Edit_student.
+           
+           DISPLAY " ".
+           DISPLAY "    Edit Student".
+           DISPLAY "    -----------".
+       
+           DISPLAY "    Enter student number to edit: "
+               WITH NO ADVANCING.
+           
+           ACCEPT StudentNumberChoice.
+
+           MOVE 0 TO Loc.
+
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               IF StudentNumber(I) IS EQUAL StudentNumberChoice
+                   MOVE I TO Loc
+               END-IF
+           END-PERFORM.
+               
+           IF Loc > 0
+               MOVE Loc TO I
+               PERFORM Edit_student_at_i    
+           ELSE
+               DISPLAY " "
+               DISPLAY "Student not found."
+           END-IF.
+           
+           
+      *****************************************
+      * Edits student table at index I
+      * Prompt to change a specific attribute in table 
+      * 
+       Edit_student_at_i.
+       
+           DISPLAY " ".
+       
+           DISPLAY student-record-heading.
+           PERFORM Display_student_table_line.
+       
+           DISPLAY " ".
+           DISPLAY "    Edit which attribute?".
+           DISPLAY "    -----------"
+           DISPLAY "1.  Student Number"
+           DISPLAY "2.  Last Name"
+           DISPLAY "3.  First Name"
+           DISPLAY "4.  Major"
+           DISPLAY "5.  GPA"
+           DISPLAY " "
+           DISPLAY "    Please make your selection: "
+               WITH NO ADVANCING
+               
+           ACCEPT AttributeChoice.
+               
+           IF AttributeChoice IS EQUAL 1
+               DISPLAY "    Enter new student number: "
+                   WITH NO ADVANCING
+               ACCEPT StudentNumber(I)
+           ELSE IF AttributeChoice IS EQUAL 2
+               DISPLAY "    Enter new last name: "
+                   WITH NO ADVANCING
+               ACCEPT StudentLastName(I)
+           ELSE IF AttributeChoice IS EQUAL 3
+               DISPLAY "    Enter new first name: "
+                   WITH NO ADVANCING
+               ACCEPT StudentFirstName(I)
+           ELSE IF AttributeChoice IS EQUAL 4
+               DISPLAY "    Enter new major: "
+                   WITH NO ADVANCING
+               ACCEPT StudentMajor(I)
+           ELSE IF AttributeChoice IS EQUAL 5
+               DISPLAY "    Enter new GPA: "
+                   WITH NO ADVANCING
+               ACCEPT  StudentGPA(I)
+           END-IF.
+       
 
       ****************************************
       * Display modify course menu
@@ -547,8 +639,9 @@
            DISPLAY "    Modify Course".
            DISPLAY "    --------------".
            DISPLAY "1.  Add Course".
-           DISPLAY "2.  Delete Course".
-           DISPLAY "3.  Cancel".
+           DISPLAY "2.  Edit Course".
+           DISPLAY "3.  Delete Course".
+           DISPLAY "4.  Cancel".
            DISPLAY " ".
            DISPLAY "    Please make your selection: "
                WITH NO ADVANCING.
@@ -565,6 +658,8 @@
            IF ModCourseChoice IS EQUAL 1
                PERFORM Add_course
            ELSE IF ModCourseChoice IS EQUAL 2
+               PERFORM Edit_course
+           ELSE IF ModCourseChoice IS EQUAL 3
                PERFORM Del_course
            END-IF.
            
@@ -587,7 +682,7 @@
            DISPLAY "    Course days (MTWRF): "       WITH NO ADVANCING.
            ACCEPT NewCourseDays.
            
-           DISPLAY "    Course time (HH:MM AM/PM): " WITH NO ADVANCING.
+           DISPLAY "    Course time (HH:MMAM/PM): "  WITH NO ADVANCING.
            ACCEPT NewCourseTime.
            
            DISPLAY "    Prof Last Name: "            WITH NO ADVANCING.
@@ -697,6 +792,92 @@
 
 
       *****************************************
+      * Find course to edit
+      * 
+       Edit_course.
+           
+           DISPLAY " ".
+           DISPLAY "    Edit Course".
+           DISPLAY "    -----------".
+       
+           DISPLAY "    Enter course number to edit: "
+               WITH NO ADVANCING.
+           
+           ACCEPT CourseNumberChoice.
+
+           MOVE 0 TO Loc.
+
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+               IF CourseNumber(I) IS EQUAL CourseNumberChoice
+                   MOVE I TO Loc
+               END-IF
+           END-PERFORM.
+               
+           IF Loc > 0
+               MOVE Loc TO I
+               PERFORM Edit_course_at_i    
+           ELSE
+               DISPLAY " "
+               DISPLAY "Course not found."
+           END-IF.
+           
+           
+      *****************************************
+      * Edits course table at index I
+      * Prompt to change a specific attribute in table 
+      * 
+       Edit_course_at_i.
+       
+           DISPLAY " ".
+       
+           DISPLAY course-record-heading.
+           PERFORM Display_course_table_line.
+       
+           DISPLAY " ".
+           DISPLAY "    Edit which attribute?".
+           DISPLAY "    -----------"
+           DISPLAY "1.  Course Number"
+           DISPLAY "2.  Course Name"
+           DISPLAY "3.  Course Days"
+           DISPLAY "4.  Course Time"
+           DISPLAY "5.  Prof Last Name"
+           DISPLAY " "
+           DISPLAY "    Please make your selection: "
+               WITH NO ADVANCING
+               
+           ACCEPT AttributeChoice.
+               
+           IF AttributeChoice IS EQUAL 1
+               DISPLAY "    Enter new course number: "
+                   WITH NO ADVANCING
+               ACCEPT CourseNumber(I)
+           ELSE IF AttributeChoice IS EQUAL 2
+               DISPLAY "    Enter new course name: "
+                   WITH NO ADVANCING
+               ACCEPT CourseName(I)
+           ELSE IF AttributeChoice IS EQUAL 3
+               DISPLAY "    Enter new course days: "
+                   WITH NO ADVANCING
+               ACCEPT CourseDays(I)
+           ELSE IF AttributeChoice IS EQUAL 4
+               DISPLAY "    Enter course time: "
+                   WITH NO ADVANCING
+               ACCEPT CourseTime(I)
+           ELSE IF AttributeChoice IS EQUAL 5
+               DISPLAY "    Enter new prof last name: "
+                   WITH NO ADVANCING
+               ACCEPT  ProfLastName(I)
+           END-IF.
+        
+
+
+
+
+
+
+
+
+      *****************************************
       * Display add registration menu 
       *
        Modify_register.
@@ -790,7 +971,7 @@
            DISPLAY "7.  Student Schedule For One Student".
            DISPLAY "8.  Course Roster For One Course".
            DISPLAY "9.  Course Roster For All Courses".
-           DISPLAY "10. Report 10".
+           DISPLAY "10. Avg. GPA For Major".
            DISPLAY "11. Exit Report Menu".
            
            DISPLAY " ".
@@ -986,6 +1167,7 @@
       
       *****************************************
       * Display list of honors students (GPA > 3.5)
+      * Writes to report file
       *     
        Honor_students.
        
@@ -1006,36 +1188,255 @@
       *****************************************
       * Ask for student number, show student number and name
       * Show all course information for student's courses
+      * Writes to report file
       *
        Student_schedule.
-       
-           DISPLAY "TODO IMPLEMENT Student_schedule".
-      
+           
+           MOVE "Student Schedule" TO ReportSectionTitle.
+           DISPLAY report-header.
+           WRITE report-record FROM report-header.
+
+           DISPLAY "Please enter a student number: " WITH NO ADVANCING.
+           ACCEPT StudentNumberChoice.
+           
+           MOVE StudentNumberChoice TO ReportSearchTerm.
+           WRITE report-record FROM report-searchterms.
+           
+           MOVE 0 TO FoundStudent.
+           
+           DISPLAY "Student:".
+           WRITE report-record FROM "Student:".
+           DISPLAY student-record-heading
+           WRITE report-record FROM student-record-heading
+           
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               IF StudentNumber(I) IS EQUAL StudentNumberChoice
+                   PERFORM Display_student_table_line
+                   MOVE 1 TO FoundStudent
+               END-IF
+           END-PERFORM.
+
+           IF FoundStudent > 0
+               PERFORM Student_course_lookup
+           ELSE
+               DISPLAY "Student not found."
+               WRITE report-record FROM "Student not found."
+           END-IF.
+               
       
       *****************************************
-      * Ask for course number, sho all course info for course
-      * Show all students enrolled in course
+      * Looks up and displays course info for student
+      * Show all courses student is enrolled in
+      * Writes to report file
+      *     
+       Student_course_lookup.
+       
+           DISPLAY "Courses:".
+           WRITE report-record FROM "Courses:".
+           
+           DISPLAY course-record-heading.
+           WRITE report-record FROM course-record-heading.
+    
+           MOVE 0 TO FoundCourse.
+           
+           PERFORM VARYING J FROM 1 BY 1 UNTIL J > RegCount
+               IF RegStuNum(J) IS EQUAL StudentNumberChoice    
+                   MOVE RegCourNum(J) TO CourseNumberChoice
+                   PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+                       IF CourseNumber(I) IS EQUAL CourseNumberChoice
+                           MOVE 1 TO FoundCourse
+                           PERFORM Display_course_table_line
+                       END-IF
+                   END-PERFORM
+               END-IF
+           END-PERFORM.
+           
+           IF FoundCourse < 1
+               DISPLAY "No courses found for student." 
+               WRITE report-record FROM "No courses found for student."     
+           END-IF.
+
+      
+      *****************************************
+      * Ask for course number, course info
+      * Show all student information for course
+      * Writes to report file
       *
        Course_roster.
-       
-           DISPLAY "TODO IMPLEMENT Course_roster".
-       
-       
+           
+           MOVE "Course Roster" TO ReportSectionTitle.
+           DISPLAY report-header.
+           WRITE report-record FROM report-header.
+
+           DISPLAY "Please enter a course number: " WITH NO ADVANCING.
+           ACCEPT CourseNumberChoice.
+           
+           MOVE CourseNumberChoice TO ReportSearchTerm.
+           WRITE report-record FROM report-searchterms.
+           
+           MOVE 0 TO FoundCourse.
+           
+           DISPLAY "Course:".
+           WRITE report-record FROM "Course:".
+           DISPLAY course-record-heading
+           WRITE report-record FROM course-record-heading
+           
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+               IF CourseNumber(I) IS EQUAL CourseNumberChoice
+                   PERFORM Display_course_table_line
+                   MOVE 1 TO FoundCourse
+               END-IF
+           END-PERFORM.
+
+           IF FoundCourse > 0
+               PERFORM Course_student_lookup
+           ELSE
+               DISPLAY "Course not found."
+               WRITE report-record FROM "Course not found."
+           END-IF.
+               
+      
       *****************************************
-      * For all courses, sho all course info for course
-      * Show all students enrolled in each course
-      * 
+      * Looks up and displays student info for a course
+      * Show all students enrolled in a course
+      * Writes to report file
+      *     
+       Course_student_lookup.
+           
+           DISPLAY "Students:".
+           WRITE report-record FROM "Students:".
+           
+           DISPLAY student-record-heading.
+           WRITE report-record FROM student-record-heading.
+    
+           MOVE 0 TO FoundStudent.
+           
+           PERFORM VARYING J FROM 1 BY 1 UNTIL J > RegCount
+               IF RegCourNum(J) IS EQUAL CourseNumberChoice    
+                   MOVE RegStuNum(J) TO StudentNumberChoice
+                   PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+                       IF StudentNumber(I) IS EQUAL StudentNumberChoice
+                           MOVE 1 TO FoundStudent
+                           PERFORM Display_student_table_line
+                       END-IF
+                   END-PERFORM
+               END-IF
+           END-PERFORM.
+           
+           IF FoundStudent < 1
+               DISPLAY "No students found for course." 
+               WRITE report-record FROM "No students found for course."     
+           END-IF.
+      
+      
+      *****************************************
+      * Show all student information for every course
+      * Writes to report file
+      *
        Multi_course_roster.
+           
+           MOVE "Full Course Roster" TO ReportSectionTitle.
+           DISPLAY report-header.
+           WRITE report-record FROM report-header.
+           
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > CourseCount
+               DISPLAY " "
+               WRITE report-record FROM " "
+               DISPLAY "Course:"
+               WRITE report-record FROM "Course:"
+               DISPLAY course-record-heading
+               WRITE report-record FROM course-record-heading
+
+               MOVE CourseNumber(I) TO CourseNumberChoice
+               PERFORM Display_course_table_line
+               PERFORM Multi_course_student_lookup
+           END-PERFORM.
+      
+      
+      *****************************************
+      * Show all students enrolled in a course
+      * Writes to report file
+      *     
+       Multi_course_student_lookup.
        
-           DISPLAY "TODO IMPLEMENT Multi_course_roster".
+           DISPLAY "Students:".
+           WRITE report-record FROM "Students:".
+           
+           DISPLAY student-record-heading.
+           WRITE report-record FROM student-record-heading.
+    
+           MOVE 0 TO FoundStudent.
+           
+           PERFORM VARYING J FROM 1 BY 1 UNTIL J > RegCount
+               IF RegCourNum(J) IS EQUAL CourseNumberChoice    
+                   MOVE RegStuNum(J) TO StudentNumberChoice
+                   
+                   PERFORM VARYING K FROM 1 BY 1 UNTIL K > StudentCount
+                       IF StudentNumber(K) IS EQUAL StudentNumberChoice
+                           MOVE 1 TO FoundStudent
+                           
+                           MOVE StudentNumber(K)    
+                               TO StudentNumberDisp
+                           MOVE StudentLastName(K)                      
+                               TO StudentLastNameDisp                     
+                           MOVE StudentFirstName(K) 
+                               TO StudentFirstNameDisp                  
+                           MOVE StudentMajor(K)     
+                               TO StudentMajorDisp
+                           MOVE StudentGPA(K)       
+                               TO StudentGPADisp
+               
+                           DISPLAY student-record-disp
+                           WRITE report-record FROM student-record-disp
+                       END-IF
+                   END-PERFORM
+               END-IF
+           END-PERFORM.
+           
+           IF FoundStudent < 1
+               DISPLAY "No students found for course." 
+               WRITE report-record FROM "No students found for course."     
+           END-IF.
       
       
       *****************************************
       * Make your own report
+      * Displays the average GPA for a given major
+      * Writes to report file
       *
        Report_10.
        
-           DISPLAY "TODO IMPLEMENT Report_10".
+           MOVE "Avg. GPA For Major" TO ReportSectionTitle.
+           DISPLAY report-header.
+           WRITE report-record FROM report-header.
+
+           DISPLAY "Please enter a major: "
+               WITH NO ADVANCING.
+               
+           ACCEPT MajorChoice.
+           
+           MOVE MajorChoice TO ReportSearchTerm.
+           WRITE report-record FROM report-searchterms.
+           
+           MOVE 0 TO TotalGPA.
+           MOVE 0 TO TotalInMajor.
+           
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > StudentCount
+               IF StudentMajor(I) IS EQUAL MajorChoice
+                   ADD StudentGPA(I) TO TotalGPA GIVING TotalGPA
+                   ADD 1 TO TotalInMajor GIVING TotalInMajor
+               END-IF
+           END-PERFORM.
+           
+           IF TotalInMajor > 0
+               DIVIDE TotalGPA BY TotalInMajor GIVING AvgGPA
+               MOVE AvgGPA TO AvgGPADisp
+               DISPLAY report-avg-disp
+               WRITE report-record FROM report-avg-disp
+           ELSE
+               DISPLAY "No GPA data for major."
+               WRITE report-record FROM "No GPA data for major."
+           END-IF.
       
       
       *****************************************
@@ -1043,8 +1444,74 @@
       * before ending the program
       *
        End_program.
-       
-           DISPLAY " ".
-           DISPLAY "TODO IMPLEMENT End_program".
            
+           DISPLAY " ".
+       
+           CLOSE report-file.
+           DISPLAY "Report summary saved".
+       
+           DISPLAY "Saving student data... " WITH NO ADVANCING.
+           OPEN OUTPUT student-file.
+           PERFORM Write_student_out VARYING I FROM 1 BY 1
+               UNTIL I > StudentCount.
+           CLOSE student-file.
+           DISPLAY "Done.".
+           
+           DISPLAY "Saving course data... " WITH NO ADVANCING.
+           OPEN OUTPUT course-file.
+           PERFORM Write_course_out VARYING I FROM 1 BY 1
+               UNTIL I > CourseCount.
+           CLOSE course-file.
+           DISPLAY "Done.".
+           
+           DISPLAY "Saving registration data... " WITH NO ADVANCING.
+           OPEN OUTPUT registration-file.
+           PERFORM Write_reg_out VARYING I FROM 1 BY 1
+               UNTIL I > RegCount.
+           CLOSE registration-file.
+           DISPLAY "Done.".
+           
+           
+      *****************************************
+      * Save data back to student, course and registration files
+      * before ending the program
+      * 
+       Write_student_out.
+           
+           MOVE StudentNumber(I)    TO StudentNumberIn.
+           MOVE StudentLastName(I)  TO StudentLastNameIn.
+           MOVE StudentFirstName(I) TO StudentFirstNameIn.
+           MOVE StudentMajor(I)     TO StudentMajorIn.
+           MOVE StudentGPA(I)       TO StudentGPAIn.
+       
+           WRITE student-record.
+       
+      *****************************************
+      * Save data back to student, course and registration files
+      * before ending the program
+      *
+       Write_course_out.
+       
+           MOVE CourseNumber(I) TO CourseNumberIn.
+           MOVE CourseName(I)   TO CourseNameIn.
+           MOVE CourseDays(I)   TO CourseDaysIn.
+           MOVE CourseTime(I)   TO CourseTimeIn.
+           MOVE ProfLastName(I) TO ProfLastNameIn.
+           
+           WRITE course-record.
+           
+       
+      ******************************************
+      * Save data back
+      * to student, course and registration files
+      * before ending the program
+      *
+       Write_reg_out.
+                      
+           MOVE RegStuNum(I)  TO RegStuNumIn.
+           MOVE RegCourNum(I) TO RegCourNumIn.
+           
+           WRITE registration-record.
+       
+       
        END PROGRAM CALURegistration.
