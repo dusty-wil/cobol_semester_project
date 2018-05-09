@@ -870,13 +870,6 @@
            END-IF.
         
 
-
-
-
-
-
-
-
       *****************************************
       * Display add registration menu 
       *
